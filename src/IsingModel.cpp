@@ -437,18 +437,23 @@ void IsingModel::plots() {
         plt::save("res/graphs/multi_sims/susceptibility.png");
         plt::cla();
 
-        double max_correlation_time = *max_element(ismdl_info.correlation_time.begin(), ismdl_info.correlation_time.end());
-        double min_correlation_time = *min_element(ismdl_info.correlation_time.begin(), ismdl_info.correlation_time.end());
-        double correlation_time_range = max_correlation_time - min_correlation_time;
-        pad = correlation_time_range*0.05;
-        plt::title("Correlation time vs. Temperature");
-        plt::plot(ismdl_info.temps, ismdl_info.correlation_time, "k.");
-        plt::plot({T_EXACT,T_EXACT}, {min_correlation_time-pad,max_correlation_time+pad}, {{"linestyle","--"},{"color","blue"}});
-        plt::ylim(min_correlation_time-pad,max_correlation_time+pad);
-        plt::xlabel("Temperature T");
-        plt::ylabel("Correlation time \\tau");
-        plt::save("res/graphs/multi_sims/correlation_time.png");
-        plt::cla();
+        /*
+        Correlation time calculation does not work for this simulation.
+        TODO: FIX THIS!!
+        */
+
+        // double max_correlation_time = *max_element(ismdl_info.correlation_time.begin(), ismdl_info.correlation_time.end());
+        // double min_correlation_time = *min_element(ismdl_info.correlation_time.begin(), ismdl_info.correlation_time.end());
+        // double correlation_time_range = max_correlation_time - min_correlation_time;
+        // pad = correlation_time_range*0.05;
+        // plt::title("Correlation time vs. Temperature");
+        // plt::plot(ismdl_info.temps, ismdl_info.correlation_time, "k.");
+        // plt::plot({T_EXACT,T_EXACT}, {min_correlation_time-pad,max_correlation_time+pad}, {{"linestyle","--"},{"color","blue"}});
+        // plt::ylim(min_correlation_time-pad,max_correlation_time+pad);
+        // plt::xlabel("Temperature T");
+        // plt::ylabel("Correlation time \\tau");
+        // plt::save("res/graphs/multi_sims/correlation_time.png");
+        // plt::cla();
 
 
 
