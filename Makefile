@@ -1,9 +1,9 @@
 CXX = g++
-CXXFLAGS = -Wall `pkg-config --cflags raylib` `pkg-config --cflags gsl` -Iinclude -I/usr/include/python3.10 -MMD
+CXXFLAGS = -Wall -Iinclude `pkg-config --cflags raylib` `pkg-config --cflags gsl` `root-config --cflags` -MMD
 RM = rm -rf
 
 LDFLAGS = -g
-LDLIBS = `pkg-config --libs raylib` `pkg-config --libs gsl` -lpython3.10
+LDLIBS = `pkg-config --libs raylib` `pkg-config --libs gsl` `root-config --libs`
 
 SRCDIR = src
 BUILDDIR = build
