@@ -14,17 +14,30 @@ From here, we can start an NxN lattice off at some initial temperature, say infi
 ## Installation and Use
 This project requires a few dependencies, and it is highly recommended that this is run on a Unix-based system (MacOX or Linux). Ensure that you have the pkg-config package installed on your system BEFORE doing this, as the Makefile relies on them, and if it is not installed, neither Raylib nor GSL will install a `.pc` file. This can be done with `sudo apt-get install pkg-config` on Ubuntu or `brew install pkg-config` on MacOS, for instance.
 
-The main dependencies are [Raylib](https://github.com/raysan5/raylib) for the graphical simulation and [GSL](https://www.gnu.org/software/gsl/) for an efficient least-squares fitting algorithm which is used to find the correlation time. Their corresponding pages have detailed installation instructions. Raylib requires a few other graphic API dependences, but can be build easily with CMake. If you build shared libraries for Raylib (as I have done), ensure you add `/usr/local/lib` to your `LD_LIBRARY_PATH` if you are working on Linux. This is a common problem, and can be found at the end of the corresponding [wiki page](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux). GSL has a `./configure; make; make install;` system that is very simple.
+The main dependencies are [Raylib](https://github.com/raysan5/raylib) for the graphical simulation, [GSL](https://www.gnu.org/software/gsl/) for an efficient least-squares fitting algorithm which is used to find the correlation time, and [ROOT](https://root.cern/),for data storage and plotting. Their corresponding pages have detailed installation instructions.
 
-Additionally, ensure you have Python development libraries. For instance, on Ubuntu 22.04, ensure you `sudo apt-get install python3-dev python3-numpy python3-matplotlib` to get development headers for those libraries. I use [Matplotlibcpp](https://github.com/lava/matplotlib-cpp) to pipe plotting data to a Python interpreter equipped with Matplotlib, as that is the syntax I am familiar with, and it requires these headers.
 
-Once these are all installed, run the following:
+Once these are all installed, run the following to do the simulation:
 
 ```
-git clone LINK
-cd LINK
+git clone https://github.com/champso1/Ising_Model.git
+cd Ising_Model
 make
 ./bin/isingmodel
 ```
 
-After you have set up the `run.config` file to your liking.
+after setting details inside of the `run.config` file.
+
+To plot the results after a simulation has been run and a `.root` file has been created with the resultant data, you can run:
+
+```
+root ./res/plot.C
+```
+
+from the terminal, or 
+
+```
+.x ./res/plot.C
+```
+
+from inside the ROOT shell.
