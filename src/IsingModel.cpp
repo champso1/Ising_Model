@@ -41,7 +41,7 @@ IsingModel::IsingModel() : grid(nullptr), hfile(nullptr), data(nullptr) {
     // set and store the initial temp
     // needs to be stored for raylib simulation, since I want to be able to press R and restart the simulation
     grid_init_flag = stoi(init_data["INITIAL_TEMP"]);
-    init_grid(grid_init_flag);
+    InitGrid(grid_init_flag);
 
     cout << "Model Initialized\n";
 }
@@ -60,7 +60,7 @@ IsingModel::~IsingModel() {
 
 
 
-int IsingModel::calc_total_energy() {
+double IsingModel::CalcEnergy() {
     if (total_energy != 0) return total_energy; // it will have already been calculated
 
     // otherwise, we need to calculate it! this only is reached in a call to init_grid()
@@ -80,33 +80,24 @@ int IsingModel::calc_total_energy() {
     }
     energy = (int)energy/2; // the above method double counts; this fixes that
     total_energy = energy; // set the class total_energy so that it can be returned for other functions
-    return energy;
+
+    return (double)energy/(lattice_size*lattice_size);;
 }
 
 
-double IsingModel::calc_total_energy_per_site() {
-    return (double)calc_total_energy()/(lattice_size*lattice_size);
-}
 
-
-int IsingModel::calc_total_mag() {
+double IsingModel::CalcMagnetization() {
     int mag = 0;
     for (int i=0; i<lattice_size; i++) {
         for (int j=0; j<lattice_size; j++) {
             mag += grid[i][j];
         }
     }
-    return mag;
+    return (double)mag/(lattice_size*lattice_size);
 }
 
 
-
-double IsingModel::calc_total_mag_per_site() {
-    return (double)calc_total_mag()/(lattice_size*lattice_size);
-}
-
-
-int IsingModel::calc_delta_U(int i, int j) {
+int IsingModel::CalcDeltaE(int i, int j) {
     int i_minus1 = (i-1 < 0) ? lattice_size-1 : i-1;
     int j_minus1 = (j-1 < 0) ? lattice_size-1 : j-1;
     int i_plus1 = (i+1 > lattice_size-1) ? 0 : i+1;
@@ -122,7 +113,7 @@ int IsingModel::calc_delta_U(int i, int j) {
 
 
 
-void IsingModel::init_grid(int flag) {
+void IsingModel::InitGrid(int flag) {
     // when we init or reset the grid, we want to also reset the total energy
     // so that it can be calculated again.
     total_energy = 0; 
@@ -143,14 +134,14 @@ void IsingModel::init_grid(int flag) {
     }
 }
 
-void IsingModel::update_grid() {
+void IsingModel::UpdateGrid() {
 
     for (size_t n=0; n<(lattice_size*lattice_size); n++) {
         // pick random lattice point
         int i = rand()%lattice_size, j = rand()%lattice_size;
 
         // compute potential change in energy
-        int delta_U = calc_delta_U(i, j);
+        int delta_U = CalcDeltaE(i, j);
         
 
         if (delta_U <= 0) {         // if change results in lower (or zero) energy, flip automatically
@@ -168,13 +159,13 @@ void IsingModel::update_grid() {
 }
 
 
-int64_t IsingModel::simulate(int N_iter) {
+int64_t IsingModel::Simulate(int N_iter) {
     auto start = chrono::high_resolution_clock::now();
 
     for (int i=0; i<N_iter; i++) {
-        update_grid();
-        double energy = calc_total_energy_per_site();
-        double mag = calc_total_mag_per_site();
+        UpdateGrid();
+        double energy = CalcEnergy();
+        double mag = CalcMagnetization();
         data->Fill((float)i, energy, mag);
     }
 
@@ -184,54 +175,53 @@ int64_t IsingModel::simulate(int N_iter) {
     return duration.count();
 }
 
-int64_t IsingModel::multi_simulate(double T0, double Tf, double dT, double N_iter_equib, double N_iter_avg) {
+int64_t IsingModel::MultiSimulate(double T0, double Tf, double dT, double N_iter_equib, double N_iter_avg) {
 
+    // start timer
     auto start = chrono::high_resolution_clock::now();
 
     int N_iter = (int)((Tf-T0)/dT) + 2; // +1 from double->int, +1 from exclusive upper bound on loop
-
     for (int n=0; n<N_iter; n++) {
 
         // calculate and set temperature for this iteration
         double temp = T0 + n*dT;
-        set_temp(temp);
-        ismdl_info.temps.push_back(temp);
+        SetTemp(temp);
 
         // first loop gets system in equilibrium
         for (int i=0; i<N_iter_equib; i++) {
-            update_grid();
+            UpdateGrid();
         }
 
-        // second loop is where averages are computed.
-        double mag = 0.0;
-        double energy = 0.0;
+        // second loop is where values/averages are computed.
+        double avg_mag = 0.0;
+        double avg_energy = 0.0;
         double mag_squared = 0.0;
         double energy_squared = 0.0;
         for (int i=0; i<N_iter_avg; i++) {
-            double _mag = calc_total_mag_per_site();
-            double _energy = calc_total_energy_per_site();
-            mag += abs(_mag); // absolute value of the mean magnetization for a given run
-            energy += _energy;
-            mag_squared += _mag*_mag;
-            energy_squared += _energy*_energy;
+            double energy = CalcEnergy();
+            double mag = CalcMagnetization();
+            avg_mag += abs(mag); // absolute value of the mean magnetization for a given run
+            avg_energy += energy;
+            mag_squared += mag*mag;
+            energy_squared += energy*energy;
 
-            update_grid();
+            UpdateGrid();
         }
         // divide the quantities by the number of samples that were taken to get means
-        mag /= N_iter_avg;
-        energy /= N_iter_avg;
+        avg_mag /= N_iter_avg;
+        avg_energy /= N_iter_avg;
         mag_squared /= N_iter_avg;
         energy_squared /= N_iter_avg;
 
 
         // add all of the values to vectors to plot
-        ismdl_info.mags.push_back(mag);
-        ismdl_info.energies.push_back(energy);
-        ismdl_info.specific_heats.push_back(beta*beta*(energy_squared - energy*energy)/lattice_size);
-        ismdl_info.susceptibilities.push_back(beta*lattice_size*(mag_squared - mag*mag));
 
+        double suscept = beta*lattice_size*(mag_squared - avg_mag*avg_mag);
+        double heat = beta*beta*(energy_squared - avg_energy*avg_energy)/lattice_size;
 
-        total_energy = 0; // reset the total energy for the next simulation
+        data->Fill(temp, avg_energy, avg_mag, suscept, heat);
+
+        ResetEnergy(); // reset the total energy for the next simulation
         cout << "T=" << temp << " sim complete." << "\n"; // good way to know that it is working!
     }
 
@@ -242,7 +232,7 @@ int64_t IsingModel::multi_simulate(double T0, double Tf, double dT, double N_ite
     return duration.count();
 }
 
-void IsingModel::show_simulation(
+void IsingModel::ShowSimulation(
     int win_w, int win_h,
     string win_title,
     int refresh_rate
@@ -257,7 +247,7 @@ void IsingModel::show_simulation(
 
         // want to be able to restart it if we press "r"
         if (IsKeyPressed(KEY_R)) {
-            init_grid(grid_init_flag);
+            InitGrid(grid_init_flag);
         }
 
         ClearBackground(BLACK);
@@ -267,7 +257,7 @@ void IsingModel::show_simulation(
                 DrawRectangle(j*(win_w/n), i*(win_h/n), (win_w/n), (win_h/n), color);
             }
         }
-        update_grid();
+        UpdateGrid();
 
         EndDrawing();
     }
@@ -278,13 +268,13 @@ void IsingModel::show_simulation(
 
 
 
-void IsingModel::run() {
+void IsingModel::Run() {
     // each part of the if(else) statement just grabs the values specific for that run,
     // then executes the corresponding function
 
     if (sim_type == SINGLE_SIM) {
         double equib_temp = stod(init_data["EQUIB_TEMP"]);
-        set_temp(equib_temp);
+        SetTemp(equib_temp);
     
         // if we have equilibration time override or not
         int equib_override = stoi(init_data["OVERRIDE_EQUIB_TIME"]);
@@ -300,7 +290,7 @@ void IsingModel::run() {
 
         // perform the simulation
         cout << "Running single-simulation...\n";
-        int64_t ms = simulate(N_iter);
+        int64_t ms = Simulate(N_iter);
         cout << "\nDone! Simulation took " << ms << " milliseconds\n";
 
         // write the ntuple data to the file
@@ -310,9 +300,19 @@ void IsingModel::run() {
         double tf = stod(init_data["TF"]);
         double dt = stod(init_data["DT"]);
 
+        // create the file handle for the multi simulation data
+        const TString file_path = DATA_FILE_PATH + MULTI_SIM_FILE_NAME;
+        hfile = (TFile *)gROOT->FindObject(file_path); if (hfile) hfile->Close();
+        hfile = new TFile(file_path, "RECREATE", "Multi simulation data");
+        // now we create the ntuple
+        data = new TNtuple("data", "Multi simulation data", "T:energy:mag:suscept:heat");
+
         cout << "Running multi-simulation...\n";
-        int64_t ms = multi_simulate(t0, tf, dt, NUM_EQUIB_ITER, NUM_AVG_ITER);
+        int64_t ms = MultiSimulate(t0, tf, dt, NUM_EQUIB_ITER, NUM_AVG_ITER);
         cout << "\nDone! All simulations took " << ms << " milliseconds, or " << (double)ms/1000.0 << " seconds.\n";
+
+        // after the simulation finishes, we write it to the file
+        data->Write();
     } else if (sim_type == RAYLIB_SIM) {
 
         int win_w = stoi(init_data["WIN_W"]);
@@ -321,8 +321,8 @@ void IsingModel::run() {
         int refresh_rate = stoi(init_data["REFRESH_RATE"]);
 
         int equib_temp = stod(init_data["EQUIB_TEMP"]);
-        set_temp(equib_temp);
+        SetTemp(equib_temp);
 
-        show_simulation(win_w, win_h, win_title, refresh_rate);
+        ShowSimulation(win_w, win_h, win_title, refresh_rate);
     }
 }

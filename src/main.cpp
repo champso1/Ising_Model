@@ -6,7 +6,7 @@ int main(void) {
 
 
     IsingModel *ismdl = new IsingModel();
-    ismdl->run();
+    ismdl->Run();
     delete ismdl;
     
     return 0;

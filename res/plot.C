@@ -11,9 +11,11 @@
 #include <iostream>
 
 const TString single_file_name = "./res/single_sim.root";
+const TString multi_file_name = "./res/multi_sim.root";
+TFile *tfile;
 
-void plot(void) {
-    TFile *tfile = nullptr;
+void plot_single(void) {
+    tfile = nullptr;
     if (gSystem->AccessPathName(single_file_name, kFileExists)) {
         std::cout << "Single sim data does not exist!" << std::endl;
         return;
@@ -46,4 +48,47 @@ void plot(void) {
     c1->Print("./res/single_sim.pdf");
 
     delete tfile;
+}
+
+
+void plot_multi() {
+    tfile = nullptr;
+    if (gSystem->AccessPathName(multi_file_name, kFileExists)) {
+        std::cout << "Multi sim data does not exist!" << std::endl;
+        return;
+    }
+    tfile = TFile::Open(multi_file_name);
+
+    TCanvas *c1 = new TCanvas("c1", "Single sim plots", 100,100, 1600,600);
+    TPad *pad1 = new TPad("pad1", "Energies", 0.02, 0.02, 0.48, 0.98, 0);
+    TPad *pad2 = new TPad("pad2", "Magnetizations", 0.52, 0.02, 0.98, 0.98, 0);
+    pad1->Draw();
+    pad2->Draw();
+    TNtuple *data = (TNtuple *)tfile->Get("data");
+    data->SetMarkerStyle(8); // larger dots
+
+    // plot the energies and magnetizations first
+    pad1->cd();
+    data->Draw("energy:T");
+    pad2->cd();
+    data->Draw("mag:T");
+
+    c1->Update();
+    c1->Print("./res/multi_sim_energy_mags.pdf");
+
+    // then we plot the susceptibilities and the specific heats
+    pad1->cd();
+    data->Draw("suscept:T");
+    pad2->cd();
+    data->Draw("heat:T");
+
+    c1->Update();
+    c1->Print("./res/multi_sim_suscept_heat.pdf");
+
+    delete tfile;
+}
+
+void plot(void) {
+    //plot_single();
+    plot_multi();
 }

@@ -18,22 +18,6 @@ enum eSimTypes {
     RAYLIB_SIM
 };
 
-
-// SIMULATION INFO
-typedef struct {
-    vector<double> temps;
-
-    // calculated during single_sims
-    vector<double> mags;
-    vector<double> energies;
-    
-    // calculated during multi_sims
-    vector<double> susceptibilities;
-    vector<double> specific_heats;
-} IsingModelInfo;
-
-
-
 /* ********* ISING MODEL ************* */
 class IsingModel {
 private:
@@ -44,13 +28,12 @@ private:
     double beta;
     int sim_type; // the type of simulation currently running
 
-    int total_energy; // the stored value of the total energy
+    int total_energy; // current total energy in the lattice
     map<string, string> init_data; // all the data from run.config
 
+    // file handle and data ntuple for data storage
     TFile *hfile;
     TNtuple *data;
-
-    IsingModelInfo ismdl_info;
 public:
     
     /* ************* INITIALIZATION FUNCTIONS *********** */
@@ -58,34 +41,32 @@ public:
     ~IsingModel();
 
 
-    inline void set_temp(double _temp) {beta = 1.0/_temp;}
-    void init_grid(int flag);
+    inline void SetTemp(double _temp) {beta = 1.0/_temp;}
+    void InitGrid(int flag);
+    void inline ResetEnergy() {total_energy = 0;} // for clarity inside of functions
 
-
-    int calc_total_energy();
-    double calc_total_energy_per_site();
-    int calc_total_mag();
-    double calc_total_mag_per_site();
-    int calc_delta_U(int i, int j); // calculates energy of set of dipole at (i,j) and xes/xer 4 neighbors
+    double CalcEnergy();
+    double CalcMagnetization();
+    int CalcDeltaE(int i, int j); // calculates energy of set of dipole at (i,j) and xes/xer 4 neighbors
 
     
-    void update_grid();
-    int64_t simulate(int N_iter);   // runs one simulation at one temperature
-    int64_t multi_simulate(         // runs multiple simulations in a range of temperatures
+    void UpdateGrid();
+    int64_t Simulate(int N_iter);   // runs one simulation at one temperature
+    int64_t MultiSimulate(         // runs multiple simulations in a range of temperatures
         double T0,
         double Tf,
         double dT,
         double N_iter_equib,
         double N_iter_avg
     );
-    void show_simulation(
+    void ShowSimulation(
         int win_w, int win_h,
         string win_title,
         int refresh_rate
     );
 
 
-    void run();
+    void Run();
     
 };
 
