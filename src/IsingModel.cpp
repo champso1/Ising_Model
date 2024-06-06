@@ -61,7 +61,7 @@ IsingModel::~IsingModel() {
 
 
 double IsingModel::CalcEnergy() {
-    if (total_energy != 0) return total_energy; // it will have already been calculated
+    if (total_energy != 0) return (double)total_energy/(lattice_size*lattice_size); // it will have already been calculated
 
     // otherwise, we need to calculate it! this only is reached in a call to init_grid()
     int energy = 0;
@@ -78,10 +78,9 @@ double IsingModel::CalcEnergy() {
             energy += energy_current;
         }
     }
-    energy = (int)energy/2; // the above method double counts; this fixes that
-    total_energy = energy; // set the class total_energy so that it can be returned for other functions
+    total_energy = energy/2; // the above method double counts, so we fix that by dividing by 2
 
-    return (double)energy/(lattice_size*lattice_size);;
+    return (double)energy/(lattice_size*lattice_size);
 }
 
 
@@ -304,7 +303,7 @@ void IsingModel::Run() {
         const TString file_path = DATA_FILE_PATH + MULTI_SIM_FILE_NAME;
         hfile = (TFile *)gROOT->FindObject(file_path); if (hfile) hfile->Close();
         hfile = new TFile(file_path, "RECREATE", "Multi simulation data");
-        // now we create the ntuple
+        // now we create the ntuple 
         data = new TNtuple("data", "Multi simulation data", "T:energy:mag:suscept:heat");
 
         cout << "Running multi-simulation...\n";
