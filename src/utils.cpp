@@ -1,5 +1,13 @@
-#include "utils.hpp"
+#include "isingmodel.hpp"
 
-double rand_double() {
-    return (double)rand()/RAND_MAX;
+#include <random>
+
+namespace ising
+{
+	double rand_double()
+	{
+		static std::uniform_real_distribution<> dist{};
+		return dist(gen);
+	}
+
 }
